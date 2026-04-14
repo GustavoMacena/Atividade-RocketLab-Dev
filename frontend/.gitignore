@@ -1,0 +1,143 @@
+# -----------------------------
+# Operating system files
+# -----------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.Spotlight-V100/
+.Trashes/
+._*
+
+# -----------------------------
+# IDE / Editor
+# -----------------------------
+.vscode/
+.idea/
+*.iml
+*.suo
+*.user
+*.userossc
+*.sln.docstates
+*.swp
+*.swo
+*~
+.history/
+
+# -----------------------------
+# Environment / secrets
+# -----------------------------
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# -----------------------------
+# Logs
+# -----------------------------
+logs/
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+pip-log.txt
+pip-delete-this-directory.txt
+
+# -----------------------------
+# Python
+# -----------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+*.cover
+.eggs/
+*.egg
+*.egg-info/
+pip-wheel-metadata/
+.pybuilder/
+build/
+dist/
+site/
+wheels/
+share/python-wheels/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+backend/venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# -----------------------------
+# Alembic / SQLAlchemy / SQLite
+# -----------------------------
+backend/alembic/versions/__pycache__/
+alembic/versions/__pycache__/
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# -----------------------------
+# Node / Frontend
+# -----------------------------
+node_modules/
+.pnpm-store/
+.npm/
+.yarn/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+.parcel-cache/
+.vite/
+.next/
+.nuxt/
+.svelte-kit/
+dist-ssr/
+coverage/
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+
+# -----------------------------
+# Build / temp artifacts
+# -----------------------------
+tmp/
+temp/
+.cache/
+.cache-loader/
+out/
+release/
+debug/
+
+# -----------------------------
+# Test reports
+# -----------------------------
+playwright-report/
+test-results/
+*.lcov
+
+# -----------------------------
+# Misc local files
+# -----------------------------
+*.local
