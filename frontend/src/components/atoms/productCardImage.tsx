@@ -6,16 +6,23 @@ type ProductCardImageProps = {
   imageUrl?: string
   imageAlt: string
   className?: string
+  hasBorder?: boolean
 }
 
-function ProductCardImage({ imageUrl, imageAlt, className }: ProductCardImageProps) {
+function ProductCardImage({
+  imageUrl,
+  imageAlt,
+  className,
+  hasBorder = true,
+}: ProductCardImageProps) {
   const [hasError, setHasError] = useState(false)
   const source = imageUrl && !hasError ? imageUrl : FALLBACK_IMAGE_URL
-  const baseClassName = 'w-full rounded-lg border border-slate-700'
-  const defaultImageModelClassName = 'h-50 object-cover'
+  const baseClassName = 'w-full rounded-lg'
+  const borderClassName = hasBorder ? 'border border-slate-700' : 'border-0'
+  const defaultImageModelClassName = 'aspect-[4/3] object-contain p-1 sm:p-2'
   const imageClassName = className
-    ? `${baseClassName} ${className}`
-    : `${baseClassName} ${defaultImageModelClassName}`
+    ? `${baseClassName} ${borderClassName} ${className}`
+    : `${baseClassName} ${borderClassName} ${defaultImageModelClassName}`
 
   return (
     <img
@@ -23,6 +30,7 @@ function ProductCardImage({ imageUrl, imageAlt, className }: ProductCardImagePro
       alt={imageAlt}
       loading="lazy"
       className={imageClassName}
+      style={{ backgroundColor: 'var(--image-surface)' }}
       onError={() => setHasError(true)}
     />
   )

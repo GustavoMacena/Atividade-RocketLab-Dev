@@ -29,7 +29,7 @@ function ProductDetailCard({
   return (
     <section
       aria-labelledby="produto-detalhe-title"
-      className="rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-lg shadow-black/25 sm:p-8"
+      className="rounded-xl border border-slate-800 bg-slate-900 p-4 shadow-lg shadow-black/25 sm:p-6 lg:p-8"
     >
       <ProductDetailCardHeader
         nomeProduto={nomeProduto}

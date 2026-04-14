@@ -36,3 +36,16 @@ class ProdutoMetricaRead(BaseModel):
     id_produto: str
     media_avaliacao: float | None = None
     quantidade_vendida: int = 0
+
+
+# SCHEMA: resposta com avaliacoes de um produto e dados do consumidor.
+class ProdutoAvaliacaoRead(BaseModel):
+    id_avaliacao: str
+    id_pedido: str
+    nome_consumidor: str
+    id_consumidor: str
+    id_vendedor: str
+    nome_vendedor: str
+    descricao_avaliacao: str
+    nota: int
+    tem_comentario: bool

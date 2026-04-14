@@ -6,7 +6,7 @@ type ContainerProps = {
 }
 
 function Container({ children, className = '' }: ContainerProps) {
-  const baseClassName = 'mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8'
+  const baseClassName = 'mx-auto w-full max-w-[1680px] px-4 sm:px-6 lg:px-8 xl:px-10'
   const containerClassName = className
     ? baseClassName + ' ' + className
     : baseClassName

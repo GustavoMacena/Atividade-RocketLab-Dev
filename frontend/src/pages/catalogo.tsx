@@ -1,18 +1,26 @@
-import { useMemo } from 'react'
+import { Pagination } from 'antd'
+import { useMemo, useState } from 'react'
 
 import Container from '../components/atoms/container'
 import ProductCard from '../components/organisms/productCard'
 import { useCategoriasImagens } from '../hooks/useCategoriasImagens'
 import { useCatalogFiltersContext } from '../hooks/useCatalogFiltersContext'
-import { useProdutos } from '../hooks/useProdutos'
 import { useProdutosMetricas } from '../hooks/useProdutosMetricas'
 import type { Produto } from '../types/produto'
 import { normalizeCategoriaProduto } from '../utils/categoriaProduto'
 
-function CatalogoPage() {
-	const { produtos, isLoading, errorMessage } = useProdutos()
+const PRODUTOS_POR_PAGINA = 60
+
+type CatalogoPageProps = {
+	produtos: Produto[]
+	isLoading: boolean
+	errorMessage: string | null
+}
+
+function CatalogoPage({ produtos, isLoading, errorMessage }: CatalogoPageProps) {
 	const { categoriaImagemPorCategoria } = useCategoriasImagens()
 	const { filters } = useCatalogFiltersContext()
+	const [paginaPorFiltro, setPaginaPorFiltro] = useState<Record<string, number>>({})
 	const produtosPorId = useMemo(() => {
 		const map = new Map<string, Produto>()
 
@@ -31,6 +39,15 @@ function CatalogoPage() {
 
 	const idsProdutosFiltrados = useMemo(() => {
 		const termoPesquisaNormalizado = filters.termoPesquisa.trim().toLowerCase()
+		const nenhumFiltroAplicado =
+			termoPesquisaNormalizado.length === 0 &&
+			!filters.categoriaSelecionada &&
+			filters.mediaAvaliacaoMinima <= 0 &&
+			filters.quantidadeVendidaMinima <= 0
+
+		if (nenhumFiltroAplicado) {
+			return idsProdutos
+		}
 
 		return idsProdutos.filter((idProduto) => {
 			const produto = produtosPorId.get(idProduto)
@@ -80,15 +97,50 @@ function CatalogoPage() {
 		[idsProdutosFiltrados, produtosPorId],
 	)
 
+	const filtrosKey = useMemo(
+		() =>
+			[
+				filters.termoPesquisa.trim().toLowerCase(),
+				filters.categoriaSelecionada ?? '',
+				String(filters.mediaAvaliacaoMinima),
+				String(filters.quantidadeVendidaMinima),
+			].join('|'),
+		[
+			filters.termoPesquisa,
+			filters.categoriaSelecionada,
+			filters.mediaAvaliacaoMinima,
+			filters.quantidadeVendidaMinima,
+		],
+	)
+
+	const totalPaginas = Math.max(
+		1,
+		Math.ceil(produtosFiltrados.length / PRODUTOS_POR_PAGINA),
+	)
+
+	const paginaSolicitada = paginaPorFiltro[filtrosKey] ?? 1
+	const paginaAtual = Math.min(paginaSolicitada, totalPaginas)
+
+	const produtosPaginaAtual = useMemo(() => {
+		const start = (paginaAtual - 1) * PRODUTOS_POR_PAGINA
+		const end = start + PRODUTOS_POR_PAGINA
+		return produtosFiltrados.slice(start, end)
+	}, [paginaAtual, produtosFiltrados])
+
 	return (
-		<Container className="py-10 sm:py-12">
+		<Container className="py-8 sm:py-10 lg:py-12">
 			<section aria-labelledby="catalogo-title">
-				<h1 id="catalogo-title" className="text-3xl font-semibold tracking-tight text-slate-100">
-					Catalogo de Produtos
+				<h1 id="catalogo-title" className="text-2xl font-semibold tracking-tight text-slate-100 sm:text-3xl">
+					Catálogo de Produtos
 				</h1>
 				<p className="mt-2 text-slate-300">
-					Lista de produtos carregada da API do backend.
+					Quantidade de produtos encontrados: {produtosFiltrados.length.toLocaleString('pt-BR')}
 				</p>
+				{!isLoading && !errorMessage && produtosFiltrados.length > 0 && (
+					<p className="mt-1 text-sm text-slate-400">
+						Exibindo pagina {paginaAtual} de {totalPaginas}
+					</p>
+				)}
 			</section>
 
 			{isLoading && (
@@ -113,9 +165,9 @@ function CatalogoPage() {
 			)}
 
 			{!isLoading && !errorMessage && produtosFiltrados.length > 0 && (
-				<section className="mt-8" aria-label="Lista de produtos">
-					<ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-						{produtosFiltrados.map((produto) => (
+				<section className="mt-6 sm:mt-8" aria-label="Lista de produtos">
+					<ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+						{produtosPaginaAtual.map((produto) => (
 							<ProductCard
 								key={produto.idProduto}
 								produto={produto}
@@ -128,6 +180,25 @@ function CatalogoPage() {
 							/>
 						))}
 					</ul>
+
+					{produtosFiltrados.length > PRODUTOS_POR_PAGINA && (
+						<div className="mt-8 overflow-x-auto pb-1">
+							<div className="flex min-w-max justify-center">
+							<Pagination
+								current={paginaAtual}
+								pageSize={PRODUTOS_POR_PAGINA}
+								total={produtosFiltrados.length}
+								showSizeChanger={false}
+								onChange={(page) => {
+									setPaginaPorFiltro((prev) => ({
+										...prev,
+										[filtrosKey]: page,
+									}))
+								}}
+							/>
+							</div>
+						</div>
+					)}
 				</section>
 			)}
 		</Container>

@@ -5,8 +5,8 @@ import CatalogCategorySelect, {
 } from '../atoms/catalogCategorySelect'
 import FilterRangeControl from '../atoms/filterRangeControl'
 import { useCatalogFiltersContext } from '../../hooks/useCatalogFiltersContext'
-import { useProdutos } from '../../hooks/useProdutos'
 import CatalogFilterField from '../molecules/catalogFilterField'
+import type { Produto } from '../../types/produto'
 import {
   formatCategoriaProduto,
   normalizeCategoriaProduto,
@@ -14,9 +14,12 @@ import {
 
 const QUANTIDADE_VENDIDA_MAXIMA = 20
 
-function CatalogFiltersBar() {
+type CatalogFiltersBarProps = {
+  produtos: Produto[]
+}
+
+function CatalogFiltersBar({ produtos }: CatalogFiltersBarProps) {
   const { filters, setFilters } = useCatalogFiltersContext()
-  const { produtos } = useProdutos()
   const categorySelectId = 'catalog-category-filter'
   const ratingInputId = 'catalog-min-rating'
   const quantityInputId = 'catalog-min-quantity'

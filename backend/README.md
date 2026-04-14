@@ -1,126 +1,174 @@
-# Backend — Sistema de Compras Online
+# Backend - Sistema de Compras Online
 
-API REST construída com **FastAPI** e **SQLite**, utilizando SQLAlchemy como ORM e Alembic para migrations.
-
----
+API REST com FastAPI + SQLAlchemy + Alembic usando SQLite.
 
 ## Requisitos
 
 - Python 3.11+
+- `pip`
 
----
+## Passo a Passo Completo
 
-## Instalação
-
-**1. Crie e ative um ambiente virtual**
+1. Entre na pasta do backend:
 
 ```bash
-python -m venv venv
+cd backend
 ```
 
-Windows:
+2. Crie o ambiente virtual (se ainda nao existir):
+
 ```bash
-venv\Scripts\activate
+python3 -m venv venv
 ```
 
-Mac/Linux:
+3. Ative o ambiente virtual:
+
 ```bash
 source venv/bin/activate
 ```
 
-**2. Instale as dependências**
+4. Instale as dependencias:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-**3. Configure as variáveis de ambiente**
-
-Copie o arquivo de exemplo e ajuste se necessário:
+5. Configure o arquivo de ambiente:
 
 ```bash
 cp .env.example .env
 ```
 
----
-
-## Banco de dados
-
-### Criar as tabelas
+6. Execute as migrations do banco:
 
 ```bash
 alembic upgrade head
 ```
 
-Este comando lê os arquivos dentro de `alembic/versions/` e cria todas as tabelas no banco.
-
-### Ver o estado atual
+7. Popule o banco com os CSVs da atividade:
 
 ```bash
-alembic current
+python scripts/populate_from_csv.py
 ```
 
-### Criar uma nova migration (após alterar um model)
-
-```bash
-alembic revision -m "descricao da mudanca"
-```
-
-Depois edite o arquivo gerado em `alembic/versions/` adicionando as instruções em `upgrade()` e `downgrade()`.
-
-### Desfazer a última migration
-
-```bash
-alembic downgrade -1
-```
-
----
-
-## Rodando a API
+8. Suba a API:
 
 ```bash
 python -m app.main
 ```
 
-A API estará disponível em: [http://localhost:8000](http://localhost:8000)
+API local: http://localhost:8000
 
-Documentação: [http://localhost:8000/docs](http://localhost:8000/docs)
+Swagger: http://localhost:8000/docs
 
----
+## Comandos Uteis
 
-## Estrutura do projeto
+Ver revision atual do Alembic:
 
+```bash
+alembic current
 ```
-backend/
-├── app/
-│   ├── main.py              # Ponto de entrada da aplicação
-│   ├── database.py          # Configuração do banco de dados
-│   ├── config.py            # Variáveis de ambiente
-│   ├── models/              # Models do SQLAlchemy 
-│   │   ├── consumidor.py
-│   │   ├── produto.py
-│   │   ├── vendedor.py
-│   │   ├── pedido.py
-│   │   ├── item_pedido.py
-│   │   └── avaliacao_pedido.py
-│   ├── schemas/             # Schemas do Pydantic
-│   │   ├── consumidor.py
-│   │   ├── produto.py
-│   │   ├── vendedor.py
-│   │   ├── pedido.py
-│   │   ├── item_pedido.py
-│   │   └── avaliacao_pedido.py
-│   └── routers/             # Rotas da API
-│       ├── consumidores.py
-│       ├── produtos.py
-│       ├── vendedores.py
-│       ├── pedidos.py
-│       ├── itens_pedidos.py
-│       └── avaliacoes_pedidos.py
-├── alembic/
-│   ├── env.py               # Configuração do Alembic
-│   └── versions/            # Arquivos de migration
-├── alembic.ini              # Configuração principal do Alembic
-├── requirements.txt
-└── .env.example
+
+Gerar nova migration:
+
+```bash
+alembic revision -m "descricao_da_mudanca"
 ```
+
+Aplicar ultima migration:
+
+```bash
+alembic upgrade head
+```
+
+Voltar uma migration:
+
+```bash
+alembic downgrade -1
+```
+
+## Rotas da API
+
+### Health
+
+- `GET /`
+
+### Produtos
+
+- `POST /produtos/`
+- `GET /produtos/`
+- `GET /produtos/metricas/`
+- `GET /produtos/{id_produto}/avaliacoes/`
+- `GET /produtos/{id_produto}`
+- `PUT /produtos/{id_produto}`
+- `PATCH /produtos/{id_produto}`
+- `DELETE /produtos/{id_produto}`
+
+### Categorias de Imagens
+
+- `POST /categorias-imagens/`
+- `GET /categorias-imagens/`
+- `GET /categorias-imagens/{categoria}`
+- `PUT /categorias-imagens/{categoria}`
+- `PATCH /categorias-imagens/{categoria}`
+- `DELETE /categorias-imagens/{categoria}`
+
+### Consumidores
+
+- `POST /consumidores/`
+- `GET /consumidores/`
+- `GET /consumidores/{id_consumidor}`
+- `PUT /consumidores/{id_consumidor}`
+- `PATCH /consumidores/{id_consumidor}`
+- `DELETE /consumidores/{id_consumidor}`
+
+### Vendedores
+
+- `POST /vendedores/`
+- `GET /vendedores/`
+- `GET /vendedores/{id_vendedor}`
+- `PUT /vendedores/{id_vendedor}`
+- `PATCH /vendedores/{id_vendedor}`
+- `DELETE /vendedores/{id_vendedor}`
+
+### Pedidos
+
+- `POST /pedidos/`
+- `GET /pedidos/`
+- `GET /pedidos/{id_pedido}`
+- `PUT /pedidos/{id_pedido}`
+- `PATCH /pedidos/{id_pedido}`
+- `DELETE /pedidos/{id_pedido}`
+
+### Itens de Pedidos
+
+- `POST /itens-pedidos/`
+- `GET /itens-pedidos/`
+- `GET /itens-pedidos/{id_pedido}/{id_item}`
+- `PUT /itens-pedidos/{id_pedido}/{id_item}`
+- `PATCH /itens-pedidos/{id_pedido}/{id_item}`
+- `DELETE /itens-pedidos/{id_pedido}/{id_item}`
+
+### Avaliacoes de Pedidos
+
+- `POST /avaliacoes-pedidos/`
+- `GET /avaliacoes-pedidos/`
+- `GET /avaliacoes-pedidos/{id_avaliacao}`
+- `PUT /avaliacoes-pedidos/{id_avaliacao}`
+- `PATCH /avaliacoes-pedidos/{id_avaliacao}`
+- `DELETE /avaliacoes-pedidos/{id_avaliacao}`
+
+## Endpoints Consumidos Pelo Frontend
+
+Atualmente o frontend consome somente os endpoints abaixo:
+
+- `GET /produtos/`
+- `GET /produtos/metricas/`
+- `GET /produtos/{id_produto}`
+- `POST /produtos/`
+- `PATCH /produtos/{id_produto}`
+- `DELETE /produtos/{id_produto}`
+- `GET /produtos/{id_produto}/avaliacoes/`
+- `GET /categorias-imagens/`
+
+Observacao: as rotas restantes continuam disponiveis no backend, mas nao sao chamadas pela interface web atual.

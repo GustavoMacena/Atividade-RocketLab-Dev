@@ -10,9 +10,9 @@ function ProductSpecRow({
   truncateValue = false,
 }: ProductSpecRowProps) {
   return (
-    <div className="flex justify-between gap-3">
+    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
       <dt className="font-medium text-slate-200">{label}</dt>
-      <dd className={truncateValue ? 'truncate' : undefined}>{value}</dd>
+      <dd className={truncateValue ? 'truncate sm:max-w-[16rem]' : undefined}>{value}</dd>
     </div>
   )
 }

@@ -18,7 +18,7 @@ function ProductCard({ produto, categoriaImagemUrl, metricaProduto }: ProductCar
         to={`/produtos/${produto.idProduto}`}
         state={{ nomeProduto: produto.nomeProduto }}
         aria-label={`Abrir detalhes do produto ${produto.nomeProduto}`}
-        className="block rounded-xl border border-slate-800 bg-slate-900 p-5 shadow-lg shadow-black/25 transition hover:border-cyan-500/60 hover:shadow-cyan-950/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+        className="block h-full rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg shadow-black/25 transition hover:border-cyan-500/60 hover:shadow-cyan-950/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 sm:p-6"
       >
         <ProductCardHeader
           nomeProduto={produto.nomeProduto}

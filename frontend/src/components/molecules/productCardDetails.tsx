@@ -1,5 +1,6 @@
 import type { Produto } from '../../types/produto'
 import type { ProdutoMetrica } from '../../types/produtoMetrica'
+import { formatMaskedProductId } from '../../utils/formatters'
 import ProductSpecRow from '../atoms/productSpecRow'
 
 type ProductCardDetailsProps = {
@@ -20,9 +21,9 @@ function ProductCardDetails({ produto, metricaProduto }: ProductCardDetailsProps
 
   return (
     <dl className="mt-4 space-y-2 text-sm text-slate-300">
-      <ProductSpecRow label="ID" value={produto.idProduto} truncateValue />
-      <ProductSpecRow label="Media avaliacao" value={mediaAvaliacao} />
-      <ProductSpecRow label="Qtd. vendida" value={quantidadeVendida} />
+      <ProductSpecRow label="ID" value={formatMaskedProductId(produto.idProduto)} />
+      <ProductSpecRow label="Média de avaliações" value={mediaAvaliacao} />
+      <ProductSpecRow label="Quantidade vendida" value={quantidadeVendida} />
     </dl>
   )
 }

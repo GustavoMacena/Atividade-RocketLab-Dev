@@ -1,12 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.avaliacao_pedido import AvaliacaoPedido
+from app.models.consumidor import Consumidor
 from app.models.item_pedido import ItemPedido
+from app.models.pedido import Pedido
 from app.models.produto import Produto
+from app.models.vendedor import Vendedor
 from app.schemas.produto import (
+    ProdutoAvaliacaoRead,
     ProdutoBase,
     ProdutoCreate,
     ProdutoMetricaRead,
@@ -46,7 +51,7 @@ def list_produtos(
     limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
 ) -> list[Produto]:
-    stmt = select(Produto).offset(skip).limit(limit)
+    stmt = select(Produto).order_by(Produto.id_produto).offset(skip).limit(limit)
     return list(db.execute(stmt).scalars().all())
 
 
@@ -104,6 +109,74 @@ def list_metricas_produtos(
     ]
 
 
+# ROTA: lista avaliacoes de um produto com nome do consumidor.
+@router.get("/{id_produto}/avaliacoes/", response_model=list[ProdutoAvaliacaoRead])
+def list_avaliacoes_produto(id_produto: str, db: Session = Depends(get_db)) -> list[ProdutoAvaliacaoRead]:
+    _get_produto_or_404(db, id_produto)
+
+    item_produto_por_pedido_subquery = (
+        select(
+            ItemPedido.id_pedido.label("id_pedido"),
+            func.min(ItemPedido.id_item).label("id_item"),
+        )
+        .where(ItemPedido.id_produto == id_produto)
+        .group_by(ItemPedido.id_pedido)
+        .subquery()
+    )
+
+    stmt = (
+        select(
+            AvaliacaoPedido.id_avaliacao.label("id_avaliacao"),
+            AvaliacaoPedido.id_pedido.label("id_pedido"),
+            Consumidor.nome_consumidor.label("nome_consumidor"),
+            Pedido.id_consumidor.label("id_consumidor"),
+            ItemPedido.id_vendedor.label("id_vendedor"),
+            Vendedor.nome_vendedor.label("nome_vendedor"),
+            AvaliacaoPedido.comentario.label("comentario"),
+            AvaliacaoPedido.titulo_comentario.label("titulo_comentario"),
+            AvaliacaoPedido.avaliacao.label("nota"),
+        )
+        .join(
+            item_produto_por_pedido_subquery,
+            item_produto_por_pedido_subquery.c.id_pedido == AvaliacaoPedido.id_pedido,
+        )
+        .join(
+            ItemPedido,
+            (
+                ItemPedido.id_pedido == item_produto_por_pedido_subquery.c.id_pedido
+            )
+            & (
+                ItemPedido.id_item == item_produto_por_pedido_subquery.c.id_item
+            ),
+        )
+        .join(Pedido, Pedido.id_pedido == AvaliacaoPedido.id_pedido)
+        .join(Consumidor, Consumidor.id_consumidor == Pedido.id_consumidor)
+        .join(Vendedor, Vendedor.id_vendedor == ItemPedido.id_vendedor)
+        .order_by(AvaliacaoPedido.data_comentario.desc(), AvaliacaoPedido.id_avaliacao)
+    )
+
+    rows = db.execute(stmt).all()
+
+    return [
+        ProdutoAvaliacaoRead(
+            id_avaliacao=row.id_avaliacao,
+            id_pedido=row.id_pedido,
+            nome_consumidor=row.nome_consumidor,
+            id_consumidor=row.id_consumidor,
+            id_vendedor=row.id_vendedor,
+            nome_vendedor=row.nome_vendedor,
+            descricao_avaliacao=(
+                (row.comentario.strip() if row.comentario else "")
+                or (row.titulo_comentario.strip() if row.titulo_comentario else "")
+                or "Avaliacao sem descricao."
+            ),
+            nota=int(row.nota),
+            tem_comentario=bool(row.comentario and row.comentario.strip()),
+        )
+        for row in rows
+    ]
+
+
 # ROTA: retorna um produto por id.
 @router.get("/{id_produto}", response_model=ProdutoRead)
 def get_produto(id_produto: str, db: Session = Depends(get_db)) -> Produto:
@@ -153,6 +226,16 @@ def update_produto(
 def delete_produto(id_produto: str, db: Session = Depends(get_db)) -> Response:
     produto = _get_produto_or_404(db, id_produto)
 
-    db.delete(produto)
-    db.commit()
+    try:
+        # Remove dependencias diretas antes de excluir o produto para evitar violacao de FK.
+        db.execute(delete(ItemPedido).where(ItemPedido.id_produto == id_produto))
+        db.delete(produto)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Nao foi possivel remover o produto por causa de relacionamentos existentes.",
+        )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -1,13 +1,21 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { useMemo, useState } from 'react'
+import { message } from 'antd'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import Container from '../components/atoms/container'
+import ProductActionsPanel from '../components/organisms/productActionsPanel'
 import ProductDetailCard from '../components/organisms/productDetailCard'
+import ProductReviewsPanel from '../components/organisms/productReviewsPanel'
+import ProductUpdateModal from '../components/organisms/productUpdateModal'
 import { useCategoriasImagens } from '../hooks/useCategoriasImagens'
-import { getProdutoById } from '../services/produtos'
-import { listProdutosMetricas } from '../services/produtosMetricas'
-import type { Produto } from '../types/produto'
-import type { ProdutoMetrica } from '../types/produtoMetrica'
+import { useProdutoAvaliacoes } from '../hooks/useProdutoAvaliacoes'
+import { useProdutoDetalhe } from '../hooks/useProdutoDetalhe'
+import {
+  deleteProdutoById,
+  updateProdutoById,
+  type UpdateProdutoPayload,
+} from '../services/produtos'
+import type { ProdutoUpdateFormValues } from '../types/produtoUpdateFormValues'
 import {
   formatCategoriaProduto,
   normalizeCategoriaProduto,
@@ -20,58 +28,25 @@ type ProdutoDetalheLocationState = {
 
 function ProdutoDetalhePage() {
   const { idProduto } = useParams<{ idProduto: string }>()
+  const navigate = useNavigate()
   const location = useLocation()
   const state = location.state as ProdutoDetalheLocationState | null
   const { categoriaImagemPorCategoria } = useCategoriasImagens()
-  const [produto, setProduto] = useState<Produto | null>(null)
-  const [metricaProduto, setMetricaProduto] = useState<ProdutoMetrica | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!idProduto) {
-      setProduto(null)
-      setMetricaProduto(null)
-      setErrorMessage('Produto nao encontrado.')
-      setIsLoading(false)
-      return
-    }
-
-    const produtoIdAtual = idProduto
-
-    const controller = new AbortController()
-
-    async function loadProdutoDetalhe() {
-      try {
-        setIsLoading(true)
-        setErrorMessage(null)
-
-        const [produtoResult, metricas] = await Promise.all([
-          getProdutoById(produtoIdAtual, controller.signal),
-          listProdutosMetricas([produtoIdAtual], controller.signal),
-        ])
-
-        setProduto(produtoResult)
-        setMetricaProduto(metricas[0] ?? null)
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') {
-          return
-        }
-
-        setProduto(null)
-        setMetricaProduto(null)
-        setErrorMessage('Falha ao carregar detalhes do produto.')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadProdutoDetalhe()
-
-    return () => {
-      controller.abort()
-    }
-  }, [idProduto])
+  const {
+    produto,
+    metricaProduto,
+    isLoading,
+    errorMessage,
+    atualizarProdutoLocal,
+  } = useProdutoDetalhe(idProduto)
+  const [isModalAtualizarAberto, setIsModalAtualizarAberto] = useState(false)
+  const [isAtualizandoProduto, setIsAtualizandoProduto] = useState(false)
+  const [isRemovendoProduto, setIsRemovendoProduto] = useState(false)
+  const {
+    avaliacoes,
+    isLoadingAvaliacoes,
+    errorAvaliacoes,
+  } = useProdutoAvaliacoes(idProduto)
 
   const nomeProdutoFallback = state?.nomeProduto?.trim() || 'Produto selecionado'
   const nomeProduto = produto?.nomeProduto ?? nomeProdutoFallback
@@ -117,13 +92,96 @@ function ProdutoDetalhePage() {
     ? formatCategoriaProduto(produto.categoriaProduto)
     : '-'
 
+  const valoresIniciaisProdutoForm = useMemo<ProdutoUpdateFormValues | undefined>(() => {
+    if (!produto) {
+      return undefined
+    }
+
+    return {
+      nomeProduto: produto.nomeProduto,
+      categoriaProduto: produto.categoriaProduto,
+      pesoProdutoGramas: produto.pesoProdutoGramas,
+      comprimentoCentimetros: produto.comprimentoCentimetros,
+      alturaCentimetros: produto.alturaCentimetros,
+      larguraCentimetros: produto.larguraCentimetros,
+    }
+  }, [produto])
+
   const imagemCategoriaStatus = categoriaImagemUrl
     ? 'Disponivel'
     : 'Placeholder padrao'
 
+  function abrirModalAtualizarProduto() {
+    if (!valoresIniciaisProdutoForm) {
+      return
+    }
+
+    setIsModalAtualizarAberto(true)
+  }
+
+  function fecharModalAtualizarProduto() {
+    setIsModalAtualizarAberto(false)
+  }
+
+  async function atualizarProduto(valores: ProdutoUpdateFormValues) {
+    if (!produto) {
+      return
+    }
+
+    try {
+      const payload: UpdateProdutoPayload = {
+        nomeProduto: valores.nomeProduto.trim(),
+        categoriaProduto: valores.categoriaProduto.trim(),
+        pesoProdutoGramas: valores.pesoProdutoGramas,
+        comprimentoCentimetros: valores.comprimentoCentimetros,
+        alturaCentimetros: valores.alturaCentimetros,
+        larguraCentimetros: valores.larguraCentimetros,
+      }
+
+      setIsAtualizandoProduto(true)
+
+      const produtoAtualizado = await updateProdutoById(produto.idProduto, payload)
+
+      atualizarProdutoLocal(produtoAtualizado)
+      setIsModalAtualizarAberto(false)
+      message.success('Produto atualizado com sucesso.')
+    } catch (error) {
+      const mensagemErro =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Falha ao atualizar o produto.'
+
+      message.error(mensagemErro)
+    } finally {
+      setIsAtualizandoProduto(false)
+    }
+  }
+
+  async function removerProduto() {
+    if (!produto) {
+      return
+    }
+
+    try {
+      setIsRemovendoProduto(true)
+      await deleteProdutoById(produto.idProduto)
+      message.success('Produto removido com sucesso.')
+      navigate('/')
+    } catch (error) {
+      const mensagemErro =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Falha ao remover o produto.'
+
+      message.error(mensagemErro)
+    } finally {
+      setIsRemovendoProduto(false)
+    }
+  }
+
   return (
-    <Container className="py-10 sm:py-12">
-      <div className="mx-auto w-full lg:w-2/3">
+    <Container className="py-8 sm:py-10 lg:py-12">
+      <div className="mx-auto w-full">
         <p className="text-sm text-slate-400">
           <Link to="/" className="transition hover:text-cyan-300">
             Voltar ao catalogo
@@ -146,22 +204,46 @@ function ProdutoDetalhePage() {
         )}
 
         {!isLoading && !errorMessage && produto && (
-          <div className="mt-6">
-            <ProductDetailCard
-              idProduto={produto.idProduto}
-              nomeProduto={nomeProduto}
-              categoriaProduto={produto.categoriaProduto}
-              categoriaProdutoLabel={categoriaProdutoLabel}
-              categoriaImagemUrl={categoriaImagemUrl}
-              imagemCategoriaStatus={imagemCategoriaStatus}
-              tamanhoProduto={tamanhoProduto}
-              pesoProduto={pesoProduto}
-              quantidadeVendida={quantidadeVendida}
-              mediaAvaliacao={mediaAvaliacao}
-            />
+          <div className="mt-6 grid gap-4 sm:gap-5 lg:grid-cols-3 lg:items-start lg:gap-6">
+            <div className="lg:col-span-2">
+              <ProductDetailCard
+                idProduto={produto.idProduto}
+                nomeProduto={nomeProduto}
+                categoriaProduto={produto.categoriaProduto}
+                categoriaProdutoLabel={categoriaProdutoLabel}
+                categoriaImagemUrl={categoriaImagemUrl}
+                imagemCategoriaStatus={imagemCategoriaStatus}
+                tamanhoProduto={tamanhoProduto}
+                pesoProduto={pesoProduto}
+                quantidadeVendida={quantidadeVendida}
+                mediaAvaliacao={mediaAvaliacao}
+              />
+
+              <ProductActionsPanel
+                onAtualizarProduto={abrirModalAtualizarProduto}
+                onRemoverProduto={removerProduto}
+                isRemovendoProduto={isRemovendoProduto}
+              />
+            </div>
+
+            <div className="lg:col-span-1 lg:sticky lg:top-4">
+              <ProductReviewsPanel
+                avaliacoes={avaliacoes}
+                isLoading={isLoadingAvaliacoes}
+                errorMessage={errorAvaliacoes}
+              />
+            </div>
           </div>
         )}
       </div>
+
+      <ProductUpdateModal
+        isOpen={isModalAtualizarAberto}
+        isSubmitting={isAtualizandoProduto}
+        initialValues={valoresIniciaisProdutoForm}
+        onCancel={fecharModalAtualizarProduto}
+        onSubmit={atualizarProduto}
+      />
     </Container>
   )
 }

@@ -9,7 +9,7 @@ type ProductDetailCardHeaderProps = {
 }
 
 const DETAIL_IMAGE_MODEL_CLASS_NAME =
-  'h-64 sm:h-72 lg:h-100 object-cover'
+  'h-64 object-contain p-2 sm:h-80 sm:p-3 lg:h-[30rem]'
 
 function ProductDetailCardHeader({
   nomeProduto,
@@ -30,7 +30,7 @@ function ProductDetailCardHeader({
         <ProductCategoryBadge label={categoriaLabel} />
         <h1
           id="produto-detalhe-title"
-          className="mt-2 text-3xl font-semibold tracking-tight text-slate-100"
+          className="mt-2 text-2xl font-semibold tracking-tight text-slate-100 sm:text-3xl"
         >
           {nomeProduto}
         </h1>

@@ -20,10 +20,14 @@ function ProductCardHeader({
       <ProductCardImage
         imageUrl={categoriaImagemUrl}
         imageAlt={`Categoria ${categoriaLabel}`}
+        className="aspect-[4/3] object-cover"
+        hasBorder={false}
       />
-      <div className="mt-4">
+      <div className="mt-3 sm:mt-4">
         <ProductCategoryBadge label={categoriaLabel} />
-        <h2 className="mt-1 text-base font-semibold text-slate-100">{nomeProduto}</h2>
+        <h2 className="mt-1 line-clamp-2 text-sm font-semibold text-slate-100 sm:text-base">
+          {nomeProduto}
+        </h2>
       </div>
     </>
   )
